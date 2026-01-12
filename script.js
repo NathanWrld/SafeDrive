@@ -13,35 +13,48 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 // Verifica si hay usuario logeado
 async function checkUserSession() {
     const { data: { session }, error } = await supabase.auth.getSession();
+
     if (error) {
         console.error('Error obteniendo la sesión:', error.message);
         return;
     }
 
-    if (!session?.user) {
-        // No hay usuario logueado → redirigir al login
+    // ❌ No hay usuario → login
+    if (!session || !session.user) {
         window.location.href = 'index.html';
+        return;
     }
-    if (session?.user) {
-        document.getElementById('userDisplay').textContent = `Bienvenido, ${session.user.email}`;
-    }else {
-        // Si hay usuario, mostrar email en perfil
-        document.getElementById('userEmail').value = session.user.email;
 
-        // Opcional: si tienes un campo para nombre, puedes usar metadata
-        if (session.user.user_metadata?.full_name) {
-            document.getElementById('userName').value = session.user.user_metadata.full_name;
-        }
+    // ✅ Hay usuario
+    const user = session.user;
+
+    // Header o saludo
+    const userDisplay = document.getElementById('userDisplay');
+    if (userDisplay) {
+        userDisplay.textContent = `Bienvenido, ${user.email}`;
+    }
+
+    // Perfil
+    const userEmail = document.getElementById('userEmail');
+    if (userEmail) {
+        userEmail.value = user.email;
+    }
+
+    const userName = document.getElementById('userName');
+    if (userName && user.user_metadata?.full_name) {
+        userName.value = user.user_metadata.full_name;
     }
 }
+
 
 checkUserSession();
 
 supabase.auth.onAuthStateChange((event, session) => {
-    if (!session?.user) {
+    if (event === 'SIGNED_OUT') {
         window.location.href = 'index.html';
     }
 });
+
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();
