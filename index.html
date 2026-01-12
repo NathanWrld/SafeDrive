@@ -194,41 +194,38 @@
 <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    // Reemplaza con tus keys de Supabase
     const supabaseUrl = 'https://roogjmgxghbuiogpcswy.supabase.co'
     const supabaseKey = 'sb_publishable_RTN2PXvdWOQFfUySAaTa_g_LLe-T_NU'
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-     function translateAuthError(message) {
-    if (message.includes('Password should be at least 6 characters')) {
-        return 'La contraseña debe tener al menos 6 caracteres';
+    // --- FUNCIONES AUXILIARES ---
+    function translateAuthError(message) {
+        if (message.includes('Password should be at least 6 characters')) return 'La contraseña debe tener al menos 6 caracteres';
+        if (message.includes('User already registered')) return 'Este correo ya está registrado';
+        if (message.includes('Invalid email')) return 'El correo electrónico no es válido';
+        if (message.includes('Invalid login credentials')) return 'Correo o contraseña incorrectos';
+        if (message.includes('Email not confirmed')) return 'El correo electrónico no ha sido confirmado';
+        if (message.includes('User not found')) return 'Usuario no encontrado';
+        return 'Ocurrió un error. Inténtalo nuevamente';
     }
 
-    if (message.includes('User already registered')) {
-        return 'Este correo ya está registrado';
+    // --- REDIRECCIÓN SI YA HAY SESIÓN ---
+    async function checkSession() {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+            console.error('Error obteniendo la sesión:', error.message);
+            return;
+        }
+
+        if (session?.user) {
+            // Si el usuario ya está logueado, lo llevamos a home.html
+            window.location.href = 'home.html';
+        }
     }
 
-    if (message.includes('Invalid email')) {
-        return 'El correo electrónico no es válido';
-    }
+    checkSession(); // <-- se ejecuta al cargar la página
 
-    if (message.includes('Invalid login credentials')) {
-        return 'Correo o contraseña incorrectos';
-    }
-
-    if (message.includes('Email not confirmed')) {
-        return 'El correo electrónico no ha sido confirmado';
-    }
-    
-    if (message.includes('User not found')) {
-        return 'Usuario no encontrado';
-    }
-
-    return 'Ocurrió un error. Inténtalo nuevamente';
-}
-
-
-    // Tabs
+    // --- TABS ---
     const loginTab = document.getElementById('loginTab');
     const registerTab = document.getElementById('registerTab');
     const loginForm = document.getElementById('loginForm');
@@ -272,44 +269,44 @@
     });
 
     // --- REGISTRO ---
-registerForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const name = document.getElementById('regName').value.trim();
-    const email = document.getElementById('regEmail').value.trim();
-    const password = document.getElementById('regPassword').value.trim();
-    const password2 = document.getElementById('regPassword2').value.trim();
-    const errorEl = document.getElementById('registerError');
-    errorEl.textContent = '';
+    registerForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const password = document.getElementById('regPassword').value.trim();
+        const password2 = document.getElementById('regPassword2').value.trim();
+        const errorEl = document.getElementById('registerError');
+        errorEl.textContent = '';
 
-    if(password !== password2) {
-        errorEl.textContent = 'Las contraseñas no coinciden';
-        return;
-    }
+        if(password !== password2) {
+            errorEl.textContent = 'Las contraseñas no coinciden';
+            return;
+        }
 
-    const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
 
-    if(error) {
-        errorEl.textContent = translateAuthError(error.message);
-        return;
-    } else {
-        // ✅ Limpiar campos del registro
-        document.getElementById('regName').value = '';
-        document.getElementById('regEmail').value = '';
-        document.getElementById('regPassword').value = '';
-        document.getElementById('regPassword2').value = '';
+        if(error) {
+            errorEl.textContent = translateAuthError(error.message);
+            return;
+        } else {
+            // Limpiar campos del registro
+            document.getElementById('regName').value = '';
+            document.getElementById('regEmail').value = '';
+            document.getElementById('regPassword').value = '';
+            document.getElementById('regPassword2').value = '';
 
-        // Mostrar popup de éxito
-        const modal = document.getElementById('successModal');
-        const closeModal = document.getElementById('closeModal');
+            // Mostrar popup de éxito
+            const modal = document.getElementById('successModal');
+            const closeModal = document.getElementById('closeModal');
 
-        modal.classList.add('active');
+            modal.classList.add('active');
 
-        closeModal.onclick = () => {
-            modal.classList.remove('active');
-            loginTab.click();
-        };
-    }
-});
+            closeModal.onclick = () => {
+                modal.classList.remove('active');
+                loginTab.click();
+            };
+        }
+    });
 
 </script>
 </body>

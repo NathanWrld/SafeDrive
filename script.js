@@ -4,6 +4,55 @@
    - Cuenta en transición closed -> open; respeta mínimo entre blinks.
    - Muestra valores útiles para depuración.
 */
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+const supabaseUrl = 'https://roogjmgxghbuiogpcswy.supabase.co'
+const supabaseKey = 'sb_publishable_RTN2PXvdWOQFfUySAaTa_g_LLe-T_NU'
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Verifica si hay usuario logeado
+async function checkUserSession() {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+        console.error('Error obteniendo la sesión:', error.message);
+        return;
+    }
+
+    if (!session?.user) {
+        // No hay usuario logueado → redirigir al login
+        window.location.href = 'index.html';
+    }
+    if (session?.user) {
+        document.getElementById('userDisplay').textContent = `Bienvenido, ${session.user.email}`;
+    }else {
+        // Si hay usuario, mostrar email en perfil
+        document.getElementById('userEmail').value = session.user.email;
+
+        // Opcional: si tienes un campo para nombre, puedes usar metadata
+        if (session.user.user_metadata?.full_name) {
+            document.getElementById('userName').value = session.user.user_metadata.full_name;
+        }
+    }
+}
+
+checkUserSession();
+
+supabase.auth.onAuthStateChange((event, session) => {
+    if (!session?.user) {
+        window.location.href = 'index.html';
+    }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+        console.error('Error cerrando sesión:', error.message);
+    } else {
+        window.location.href = 'index.html';
+    }
+});
+
+
 /* Registro de Sesiones en la base de datos */
 let sessionId = null; // Guardará el id_sesion actual
 let camera = null;
