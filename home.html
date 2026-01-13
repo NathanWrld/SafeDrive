@@ -28,6 +28,7 @@
     <!-- OVERLAY -->
     <div id="overlay" class="overlay"></div>
 
+
     <!-- Sidebar -->
     <div class="sidebar" id="sidebar">
         <h2>Panel Principal</h2>
@@ -57,6 +58,7 @@
 <b>Se recomienda acudir a un profesional de la salud</b> para descartar astenia u otras condiciones médicas.</p>
         </section>
 
+
         <!-- Detección en tiempo real -->
         <section id="deteccion" class="card" style="display:none;">
             <h2>Detección en Tiempo Real</h2>
@@ -71,7 +73,8 @@
             <button id="stopDetection" class="primary-button" style="display:none;">Detener Detección</button>
         </section>
 
-        <!-- Gestión de usuarios / Editar Perfil -->
+
+    <!-- Gestión de usuarios / Editar Perfil -->
         <section id="usuarios" class="card" style="display:none;">
             <h2 style="margin-bottom:20px; text-align:center;">Mi Perfil</h2>
 
@@ -102,6 +105,8 @@
             </form>
         </section>
 
+
+
        <!-- Historial -->
         <section id="historial" class="card" style="display:none;">
 
@@ -109,6 +114,7 @@
 
             <!-- Filtros -->
             <div class="history-filters">
+                
                 <div class="filter-wrapper">
                     <div class="filter-item">
                         <label for="filterDate">Fecha:</label>
@@ -132,7 +138,7 @@
                             <option value="Normal">Normal</option>
                             <option value="Leve">Leve</option>
                             <option value="Moderado">Moderado</option>
-                            <option value="Alto riesgo">Alto riesgo</option>
+                            <option value="Alto">Alto riesgo</option>
                         </select>
                     </div>
 
@@ -161,6 +167,7 @@
                     </thead>
 
                     <tbody id="historyTable">
+                        <!-- Ejemplo inicial -->
                         <tr>
                             <td>2025-12-01 08:00</td>
                             <td>Somnolencia</td>
@@ -188,15 +195,20 @@
             <!-- Paginación -->
             <div class="pagination">
                 <button class="page-btn" id="prevPage">
-                    <svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
+                     <?xml version="1.0" encoding="utf-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"  version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
                 </button>
                 <span id="pageInfo">Página 1 de 1</span>
                 <button class="page-btn" id="nextPage">
-                    <svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
+                   <?xml version="1.0" encoding="utf-8"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"  version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
                 </button>
             </div>
 
         </section>
+
     </div>
 </div>
 
@@ -215,15 +227,9 @@
             sections.forEach(sec => {
                 document.getElementById(sec).style.display = (sec === btn.dataset.target) ? 'block' : 'none';
             });
-
-            // Cargar perfil SOLO cuando se abre módulo usuarios
-            if(btn.dataset.target === 'usuarios' && typeof loadUserProfile === 'function') {
-                loadUserProfile();
-            }
         });
     });
 </script>
-
 <script>
     const riskLevels = ["Normal", "Leve", "Moderado", "Alto riesgo"];
     const riskColors = ['#10b981','#facc15','#f97316','#ef4444'];
@@ -262,18 +268,28 @@
         },
         options: {
             responsive:false,
-            layout: { padding: { top: 30, bottom: 10 } },
-            scales: {
-                y: { type: 'category', labels: riskLevels, reverse: true, ticks: { color:'#fff' } },
-                x: { ticks: { color:'#fff' } }
+            layout: {
+                padding: { top: 30, bottom: 10 }
             },
-            plugins: { legend: { labels: { color:'#fff' } } }
+            scales: {
+                y: {
+                    type: 'category',
+                    labels: riskLevels,
+                    reverse: true, // ahora Normal arriba, Alto riesgo abajo
+                    ticks: { color:'#fff' }
+                },
+                x: {
+                    ticks: { color:'#fff' }
+                }
+            },
+            plugins: {
+                legend: { labels: { color:'#fff' } }
+            }
         }
     });
 </script>
 
 <script type="module" src="script.js"></script>
-<script type="module" src="gestion-usuario.js"></script>
 <script src="burger-btn.js"></script>
 
 </body>
