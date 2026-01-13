@@ -271,6 +271,7 @@
     // --- REGISTRO ---
     registerForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
         const name = document.getElementById('regName').value.trim();
         const email = document.getElementById('regEmail').value.trim();
         const password = document.getElementById('regPassword').value.trim();
@@ -278,35 +279,44 @@
         const errorEl = document.getElementById('registerError');
         errorEl.textContent = '';
 
-        if(password !== password2) {
+        if (password !== password2) {
             errorEl.textContent = 'Las contraseñas no coinciden';
             return;
         }
 
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        try {
+            // 1️⃣ Registrar en Auth
+            const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+            if (signUpError) throw signUpError;
 
-        if(error) {
-            errorEl.textContent = translateAuthError(error.message);
-            return;
-        } else {
-            // Limpiar campos del registro
+            const authUid = signUpData.user.id;
+
+            // 2️⃣ Insertar en tabla Usuarios
+            await supabase.from('Usuarios').insert([
+                { id_usuario: authUid, nombre: name }
+            ]);
+
+            // 3️⃣ Limpiar campos
             document.getElementById('regName').value = '';
             document.getElementById('regEmail').value = '';
             document.getElementById('regPassword').value = '';
             document.getElementById('regPassword2').value = '';
 
-            // Mostrar popup de éxito
+            // 4️⃣ Mostrar popup de éxito
             const modal = document.getElementById('successModal');
             const closeModal = document.getElementById('closeModal');
-
             modal.classList.add('active');
-
             closeModal.onclick = () => {
                 modal.classList.remove('active');
                 loginTab.click();
             };
+
+        } catch (err) {
+            console.error(err);
+            errorEl.textContent = translateAuthError(err.message);
         }
     });
+
 
 </script>
 </body>

@@ -298,6 +298,7 @@ function startDetection() {
     camera.start();
 }
 
+// ---------------- Edición de Perfil ----------------
 async function loadUserProfile() {
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData.user) return;
@@ -323,31 +324,71 @@ async function loadUserProfile() {
 // Ejecutar cuando se abre el módulo "usuarios"
 document.querySelector('.menu-btn[data-target="usuarios"]').addEventListener('click', loadUserProfile);
 
+document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const messageEl = document.getElementById('profileMessage');
+    messageEl.textContent = '';
+    messageEl.style.color = '#f87171';
+
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return;
+    const userId = authData.user.id;
+
+    const newName = document.getElementById('userName').value;
+    const newEmail = document.getElementById('userEmail').value;
+    const photoFile = document.getElementById('userPhotoInput').files[0];
+
+    try {
+        // Actualizar tabla Usuarios
+        await supabase.from('Usuarios')
+            .update({ nombre: newName })
+            .eq('id_usuario', userId);
+
+        // Actualizar email en Auth si cambió
+        if (newEmail !== authData.user.email) {
+            const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
+            if (emailError) throw emailError;
+        }
+
+        // Subir foto si seleccionó una
+        if (photoFile) {
+            const photoUrl = await uploadUserPhoto(photoFile, userId);
+            document.getElementById('userPhoto').src = photoUrl;
+        }
+
+        messageEl.style.color = '#10b981';
+        messageEl.textContent = "Perfil actualizado correctamente.";
+    } catch (err) {
+        console.error(err);
+        messageEl.textContent = "Error al actualizar perfil.";
+    }
+});
+
 async function uploadUserPhoto(file, userId) {
     const fileExt = file.name.split('.').pop();
     const fileName = `${userId}.${fileExt}`;
     const filePath = `perfil/${fileName}`;
 
     const { data, error } = await supabase.storage
-        .from('avatars')      // Debes crear un bucket llamado 'avatars'
+        .from('avatars')   // Debes crear bucket 'avatars'
         .upload(filePath, file, { upsert: true });
 
     if (error) throw error;
 
-    // Obtener URL pública
     const { publicUrl, error: urlError } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
 
     if (urlError) throw urlError;
 
-    // Actualizar la tabla Usuarios
+    // Actualizar tabla Usuarios con URL de la foto
     await supabase.from('Usuarios')
         .update({ foto: publicUrl })
         .eq('id_usuario', userId);
 
     return publicUrl;
 }
+
 
 document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
