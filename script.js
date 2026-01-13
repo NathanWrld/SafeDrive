@@ -46,6 +46,7 @@ async function checkUserSession() {
     }
 }
 
+
 checkUserSession();
 
 supabase.auth.onAuthStateChange((event, session) => {
@@ -53,6 +54,7 @@ supabase.auth.onAuthStateChange((event, session) => {
         window.location.href = 'index.html';
     }
 });
+
 
 document.getElementById('logoutBtn').addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();
@@ -62,6 +64,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
         window.location.href = 'index.html';
     }
 });
+
 
 /* Registro de Sesiones en la base de datos */
 let sessionId = null; // Guardará el id_sesion actual
@@ -149,6 +152,8 @@ document.getElementById('stopDetection').addEventListener('click', async () => {
     document.getElementById('startDetection').style.display = 'inline-block';
     document.getElementById('stopDetection').style.display = 'none';
 });
+
+
 
 // ---------------- Lógica de detección ----------------
 function startDetection() {
@@ -291,93 +296,4 @@ function startDetection() {
         height: 360
     });
     camera.start();
-}
-
-// ---------------- Gestión de usuarios ----------------
-const profileForm = document.getElementById('editProfileForm');
-const profileMessage = document.getElementById('profileMessage');
-
-if(profileForm){
-    profileForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        profileMessage.textContent = '';
-        profileMessage.classList.remove('success','error');
-
-        const userName = document.getElementById('userName').value.trim();
-        const userEmail = document.getElementById('userEmail').value.trim();
-        const newPassword = document.getElementById('newPassword').value;
-        const repeatPassword = document.getElementById('repeatPassword').value;
-        const currentPassword = document.getElementById('currentPassword').value;
-
-        if(!currentPassword){
-            profileMessage.textContent = 'Debes ingresar tu contraseña actual.';
-            profileMessage.classList.add('error');
-            return;
-        }
-
-        if(newPassword && newPassword !== repeatPassword){
-            profileMessage.textContent = 'La nueva contraseña y la repetición no coinciden.';
-            profileMessage.classList.add('error');
-            return;
-        }
-
-        try {
-            const { data: { user }, error: userError } = await supabase.auth.getUser();
-            if(userError || !user){
-                profileMessage.textContent = 'No se pudo obtener el usuario.';
-                profileMessage.classList.add('error');
-                return;
-            }
-
-            // Actualizar metadata (nombre)
-            const updates = { full_name: userName };
-
-            const { error: updateMetaError } = await supabase.auth.updateUser({
-                data: updates
-            });
-
-            if(updateMetaError){
-                profileMessage.textContent = 'Error al actualizar nombre.';
-                profileMessage.classList.add('error');
-                return;
-            }
-
-            // Actualizar email si cambió
-            if(userEmail !== user.email){
-                const { error: emailError } = await supabase.auth.updateUser({
-                    email: userEmail
-                });
-                if(emailError){
-                    profileMessage.textContent = 'Error al actualizar correo.';
-                    profileMessage.classList.add('error');
-                    return;
-                }
-            }
-
-            // Actualizar contraseña si se ingresó nueva
-            if(newPassword){
-                const { error: passError } = await supabase.auth.updateUser({
-                    password: newPassword
-                });
-                if(passError){
-                    profileMessage.textContent = 'Error al actualizar contraseña.';
-                    profileMessage.classList.add('error');
-                    return;
-                }
-            }
-
-            profileMessage.textContent = 'Perfil actualizado correctamente.';
-            profileMessage.classList.add('success');
-
-            // Limpiar campos de contraseña
-            document.getElementById('newPassword').value = '';
-            document.getElementById('repeatPassword').value = '';
-            document.getElementById('currentPassword').value = '';
-
-        } catch(err){
-            console.error(err);
-            profileMessage.textContent = 'Ocurrió un error al actualizar perfil.';
-            profileMessage.classList.add('error');
-        }
-    });
 }
