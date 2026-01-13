@@ -4,21 +4,25 @@ import { supabase } from './config/supabase.js';
 
 const page = document.body.id;
 
-if (page === 'home') {
-    // Página protegida → si no hay sesión, redirige al login
-    checkUserSession(true).then((user) => {
-        if (!user) return; // Redirigido al login
+document.addEventListener('DOMContentLoaded', async () => {
+    if (page === 'home') {
+        const user = await checkUserSession();
+        if (!user) {
+            // Redirige solo si no hay sesión en páginas protegidas
+            window.location.href = 'index.html';
+            return;
+        }
 
         listenAuthChanges();
         initControls();
-    });
-} else if (page === 'login') {
-    // Página login → si ya hay sesión, ir a home
-    supabase.auth.getSession().then(({ data: { session } }) => {
+
+    } else if (page === 'login') {
+        const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
+            // Redirige a home si ya hay sesión
             window.location.href = 'home.html';
         }
-    });
-}
-
+        // Si no hay sesión, se queda en login
+    }
+});
 
