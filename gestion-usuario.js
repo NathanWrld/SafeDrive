@@ -5,38 +5,48 @@ const supabaseUrl = 'https://roogjmgxghbuiogpcswy.supabase.co'
 const supabaseKey = 'sb_publishable_RTN2PXvdWOQFfUySAaTa_g_LLe-T_NU'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-// Función para cargar datos del usuario logueado
-async function loadUserProfile() {
-    try {
-        const { data: { user }, error } = await supabase.auth.getUser()
-        if (error) {
-            console.error("Error obteniendo usuario:", error.message)
-            return
-        }
+// Verificar sesión antes de hacer cualquier cosa
+async function checkSessionAndLoadProfile() {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    if (error) {
+        console.error("Error obteniendo sesión:", error.message)
+        return
+    }
 
-        if (user) {
-            document.getElementById('userName').value = user.user_metadata?.full_name || ''
-            document.getElementById('userEmail').value = user.email || ''
-        }
-    } catch (err) {
-        console.error("Error inesperado al cargar perfil:", err)
+    if (!session) {
+        // Redirigir a login o mostrar mensaje
+        alert("No hay sesión activa. Por favor, ingresa primero.")
+        window.location.href = "/login.html" // ajusta según tu login
+        return
+    }
+
+    // Cargar perfil solo si hay sesión
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError) {
+        console.error("Error obteniendo usuario:", userError.message)
+        return
+    }
+
+    if (user) {
+        document.getElementById('userName').value = user.user_metadata?.full_name || ''
+        document.getElementById('userEmail').value = user.email || ''
     }
 }
 
-// Ejecutar la carga de perfil solo **al abrir la sección de usuarios**
+// Ejecutar solo cuando el usuario haga click en "Gestión de Usuario"
 const usuariosBtn = document.querySelector('.menu-btn[data-target="usuarios"]')
 if (usuariosBtn) {
-    usuariosBtn.addEventListener('click', loadUserProfile)
+    usuariosBtn.addEventListener('click', checkSessionAndLoadProfile)
 }
 
-// Manejar actualización del perfil
+// Formulario de actualización
 const editProfileForm = document.getElementById('editProfileForm')
 if (editProfileForm) {
     editProfileForm.addEventListener('submit', async (e) => {
         e.preventDefault()
         const messageEl = document.getElementById('profileMessage')
         messageEl.textContent = ''
-        messageEl.style.color = '#f87171' // rojo por defecto
+        messageEl.style.color = '#f87171'
 
         const name = document.getElementById('userName').value
         const email = document.getElementById('userEmail').value
@@ -49,7 +59,6 @@ if (editProfileForm) {
         }
 
         try {
-            // Actualización de datos (nombre, email, contraseña opcional)
             const { error: updateError } = await supabase.auth.updateUser({
                 email: email,
                 password: newPassword || undefined,
@@ -61,10 +70,9 @@ if (editProfileForm) {
                 return
             }
 
-            messageEl.style.color = "#10b981" // verde
+            messageEl.style.color = "#10b981"
             messageEl.textContent = "Perfil actualizado correctamente."
 
-            // Limpiar campos de contraseña
             document.getElementById('newPassword').value = ''
             document.getElementById('repeatPassword').value = ''
 
