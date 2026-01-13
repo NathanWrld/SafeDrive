@@ -75,36 +75,35 @@
 
 
     <!-- Gestión de usuarios / Editar Perfil -->
-        <form id="editProfileForm">
-            <div class="form-group">
-                <label for="userName">Nombre:</label>
-                <input type="text" id="userName" required>
-            </div>
+        <section id="usuarios" class="card" style="display:none;">
+            <h2 style="margin-bottom:20px; text-align:center;">Mi Perfil</h2>
 
-            <div class="form-group">
-                <label for="userEmail">Email:</label>
-                <input type="email" id="userEmail" required>
-            </div>
+            <form id="editProfileForm">
+                <div class="form-group">
+                    <label for="userName">Nombre:</label>
+                    <input type="text" id="userName" required>
+                </div>
+                <div class="form-group">
+                    <label for="userEmail">Email:</label>
+                    <input type="email" id="userEmail" required>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">Nueva Contraseña:</label>
+                    <input type="password" id="newPassword" placeholder="Nueva contraseña">
+                </div>
+                <div class="form-group">
+                    <label for="repeatPassword">Repetir Contraseña:</label>
+                    <input type="password" id="repeatPassword" placeholder="Repetir contraseña">
+                </div>
+                <div class="form-group">
+                    <label for="currentPassword">Contraseña Actual:</label>
+                    <input type="password" id="currentPassword" placeholder="Contraseña actual" required>
+                </div>
 
-            <div class="form-group">
-                <label for="newPassword">Nueva Contraseña:</label>
-                <input type="password" id="newPassword" placeholder="Nueva contraseña">
-            </div>
-
-            <div class="form-group">
-                <label for="repeatPassword">Repetir Contraseña:</label>
-                <input type="password" id="repeatPassword" placeholder="Repetir contraseña">
-            </div>
-
-            <div class="form-group">
-                <label for="currentPassword">Contraseña Actual:</label>
-                <input type="password" id="currentPassword" placeholder="Contraseña actual" required>
-            </div>
-
-            <div id="profileMessage" class="error"></div>
-
-            <button type="submit" class="primary-button">Guardar Cambios</button>
-        </form>
+                <div id="profileMessage" class="error"></div>
+                <button type="submit" class="primary-button">Guardar Cambios</button>
+            </form>
+        </section>
 
 
 
