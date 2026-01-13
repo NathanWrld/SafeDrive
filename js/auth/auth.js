@@ -1,53 +1,33 @@
+// auth.js
 import { supabase } from '../config/supabase.js';
 
-export async function checkUserSession() {
-    try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error || !session?.user) {
+export function initAuth() {
+    // Verificar sesión al cargar home
+    supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.user) {
             window.location.href = 'index.html';
             return;
         }
 
         const user = session.user;
-
         const userDisplay = document.getElementById('userDisplay');
         if (userDisplay) userDisplay.textContent = `Bienvenido, ${user.email}`;
+    });
 
-        const userEmail = document.getElementById('userEmail');
-        if (userEmail) userEmail.value = user.email;
-
-        const userName = document.getElementById('userName');
-        if (userName && user.user_metadata?.full_name) {
-            userName.value = user.user_metadata.full_name;
-        }
-    } catch (err) {
-        console.error('Error en checkUserSession:', err);
-    }
-}
-
-export function listenAuthChanges() {
+    // Escuchar cambios de sesión
     supabase.auth.onAuthStateChange((event) => {
         if (event === 'SIGNED_OUT') {
             window.location.href = 'index.html';
         }
     });
-}
 
-export function initLogout() {
+    // Botón logout
     const logoutBtn = document.getElementById('logoutBtn');
-    if (!logoutBtn) return; // Si no hay botón, no hace nada
-
-    logoutBtn.addEventListener('click', async () => {
-        try {
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async () => {
             const { error } = await supabase.auth.signOut();
-            if (error) {
-                alert('Error cerrando sesión: ' + error.message);
-                return;
-            }
-            // Redirigir al login
-            window.location.href = 'index.html';
-        } catch (err) {
-            alert('Error inesperado al cerrar sesión: ' + err.message);
-        }
-    });
+            if (!error) window.location.href = 'index.html';
+            else alert('Error cerrando sesión: ' + error.message);
+        });
+    }
 }

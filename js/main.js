@@ -1,16 +1,25 @@
-import { checkUserSession, listenAuthChanges } from './auth/auth.js';
+// main.js
+import { initAuth } from './auth/auth.js';
 import { initControls } from './ui/controls.js';
 
-const page = document.body.id;
+document.addEventListener('DOMContentLoaded', () => {
+    const page = document.body.id;
 
-// Siempre ejecuta checkUserSession y escucha cambios
-checkUserSession();
-listenAuthChanges();
+    if (page === 'home') {
+        // Inicializa Supabase y escucha cambios
+        initAuth(); 
 
-// Solo inicializa controles si estamos en home
-if (page === 'home') {
-    initControls();
-    initLogout();
-}
-
+        // Inicializa UI y detección
+        initControls();
+    } else if (page === 'login') {
+        // Si ya está logueado, ir a home
+        import('./config/supabase.js').then(({ supabase }) => {
+            supabase.auth.getSession().then(({ data: { session } }) => {
+                if (session?.user) {
+                    window.location.href = 'home.html';
+                }
+            });
+        });
+    }
+});
 
