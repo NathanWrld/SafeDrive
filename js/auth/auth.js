@@ -35,7 +35,16 @@ export function listenAuthChanges() {
 }
 
 export async function logout() {
-    await supabase.auth.signOut();
-    window.location.href = 'index.html';
+    try {
+        console.log('Logout iniciado');
+        const { error } = await supabase.auth.signOut();
+        if (error) {
+            alert('Error cerrando sesión: ' + error.message);
+            return;
+        }
+        window.location.href = 'index.html';
+    } catch (err) {
+        alert('Error inesperado: ' + err.message);
+    }
 }
 
