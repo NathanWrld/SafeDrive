@@ -10,6 +10,7 @@ listenAuthChanges();
 // Solo inicializa controles si estamos en home
 if (page === 'home') {
     initControls();
+    initLogout();
 }
 
 
