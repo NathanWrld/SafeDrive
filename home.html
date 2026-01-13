@@ -132,7 +132,7 @@
                             <option value="Normal">Normal</option>
                             <option value="Leve">Leve</option>
                             <option value="Moderado">Moderado</option>
-                            <option value="Alto">Alto riesgo</option>
+                            <option value="Alto riesgo">Alto riesgo</option>
                         </select>
                     </div>
 
@@ -161,7 +161,6 @@
                     </thead>
 
                     <tbody id="historyTable">
-                        <!-- Ejemplo inicial -->
                         <tr>
                             <td>2025-12-01 08:00</td>
                             <td>Somnolencia</td>
@@ -189,18 +188,15 @@
             <!-- Paginación -->
             <div class="pagination">
                 <button class="page-btn" id="prevPage">
-                     <?xml version="1.0" encoding="utf-8"?>
-<svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"  version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
+                    <svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
                 </button>
                 <span id="pageInfo">Página 1 de 1</span>
                 <button class="page-btn" id="nextPage">
-                   <?xml version="1.0" encoding="utf-8"?>
-<svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"  version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
+                    <svg width="800px" height="800px" viewBox="0 0 1024 1024" class="icon"><path d="M364.8 106.666667L298.666667 172.8 637.866667 512 298.666667 851.2l66.133333 66.133333L768 512z" fill="currentColor" /></svg>
                 </button>
             </div>
 
         </section>
-
     </div>
 </div>
 
@@ -220,11 +216,9 @@
                 document.getElementById(sec).style.display = (sec === btn.dataset.target) ? 'block' : 'none';
             });
 
-            // Si es módulo usuarios, cargar perfil
-            if(btn.dataset.target === 'usuarios') {
-                import('./gestion-usuario.js').then(module => {
-                    module.loadUserProfile && module.loadUserProfile();
-                });
+            // Cargar perfil SOLO cuando se abre módulo usuarios
+            if(btn.dataset.target === 'usuarios' && typeof loadUserProfile === 'function') {
+                loadUserProfile();
             }
         });
     });
@@ -268,23 +262,12 @@
         },
         options: {
             responsive:false,
-            layout: {
-                padding: { top: 30, bottom: 10 }
-            },
+            layout: { padding: { top: 30, bottom: 10 } },
             scales: {
-                y: {
-                    type: 'category',
-                    labels: riskLevels,
-                    reverse: true,
-                    ticks: { color:'#fff' }
-                },
-                x: {
-                    ticks: { color:'#fff' }
-                }
+                y: { type: 'category', labels: riskLevels, reverse: true, ticks: { color:'#fff' } },
+                x: { ticks: { color:'#fff' } }
             },
-            plugins: {
-                legend: { labels: { color:'#fff' } }
-            }
+            plugins: { legend: { labels: { color:'#fff' } } }
         }
     });
 </script>
