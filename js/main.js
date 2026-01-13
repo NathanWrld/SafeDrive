@@ -5,17 +5,20 @@ import { supabase } from './config/supabase.js';
 const page = document.body.id;
 
 if (page === 'home') {
-    // Solo en páginas protegidas
-    checkUserSession();      
-    listenAuthChanges();
-    initControls();
+    // Página protegida → si no hay sesión, redirige al login
+    checkUserSession(true).then((user) => {
+        if (!user) return; // Redirigido al login
+
+        listenAuthChanges();
+        initControls();
+    });
 } else if (page === 'login') {
-    // Solo en login
+    // Página login → si ya hay sesión, ir a home
     supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-            // Si ya está logueado, ir a home
             window.location.href = 'home.html';
         }
     });
 }
+
 

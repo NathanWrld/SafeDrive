@@ -1,25 +1,22 @@
 import { supabase } from '../config/supabase.js';
 
-export async function checkUserSession() {
+export async function checkUserSession(protectedPage = false) {
     const { data: { session }, error } = await supabase.auth.getSession();
 
-    if (error || !session?.user) {
-        window.location.href = 'index.html';
+    if (error) {
+        console.error('Error al obtener sesión:', error);
         return;
     }
 
-    const user = session.user;
-
-    const userDisplay = document.getElementById('userDisplay');
-    if (userDisplay) userDisplay.textContent = `Bienvenido, ${user.email}`;
-
-    const userEmail = document.getElementById('userEmail');
-    if (userEmail) userEmail.value = user.email;
-
-    const userName = document.getElementById('userName');
-    if (userName && user.user_metadata?.full_name) {
-        userName.value = user.user_metadata.full_name;
+    if (!session?.user) {
+        // Si es página protegida y no hay sesión → redirigir a login
+        if (protectedPage) {
+            window.location.href = 'index.html';
+        }
+        return null;
     }
+
+    return session.user;
 }
 
 export function listenAuthChanges() {
