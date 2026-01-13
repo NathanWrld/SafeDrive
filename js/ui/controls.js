@@ -1,6 +1,6 @@
 import { startDetection, stopDetection } from '../detection/faceDetection.js';
 import { startDrivingSession, endDrivingSession } from '../sessions/drivingSession.js';
-import { logout } from '../auth/auth.js';
+import { initLogout } from '../auth/auth.js';
 import { initBurgerMenu } from './burger-btn.js';
 
 export function initControls() {
@@ -17,9 +17,7 @@ export function initControls() {
     const logoutBtn = document.getElementById('logoutBtn');
 
     // ---------------- LOGOUT ----------------
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
+    initLogout();  // <-- llamamos a la función
 
     // ---------------- DETECCIÓN ----------------
     // Solo inicializar detección si existen todos los elementos
