@@ -16,10 +16,14 @@ export function initControls() {
     const stopBtn = document.getElementById('stopDetection');
     const logoutBtn = document.getElementById('logoutBtn');
 
-    // Si no estamos en home.html, salir sin romper nada
-    if (!video || !canvas || !estado || !startBtn || !stopBtn) {
-        return;
+    // ---------------- LOGOUT ----------------
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', logout);
     }
+
+    // ---------------- DETECCIÓN ----------------
+    // Solo inicializar detección si existen todos los elementos
+    if (!video || !canvas || !estado || !startBtn || !stopBtn) return;
 
     // ---------------- INICIAR DETECCIÓN ----------------
     startBtn.addEventListener('click', async () => {
@@ -48,10 +52,6 @@ export function initControls() {
 
         await endDrivingSession();
     });
-
-    // ---------------- LOGOUT ----------------
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', logout);
-    }
 }
+
 
