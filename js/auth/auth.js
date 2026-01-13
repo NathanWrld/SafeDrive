@@ -1,29 +1,28 @@
-// auth.js
 import { supabase } from '../config/supabase.js';
 
 export async function checkUserSession() {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error || !session?.user) {
+            window.location.href = 'index.html';
+            return;
+        }
 
-    if (error || !session?.user) {
-        window.location.href = 'index.html'; // ❌ solo en páginas protegidas, pero dejemos como antes
-        return;
+        const user = session.user;
+
+        const userDisplay = document.getElementById('userDisplay');
+        if (userDisplay) userDisplay.textContent = `Bienvenido, ${user.email}`;
+
+        const userEmail = document.getElementById('userEmail');
+        if (userEmail) userEmail.value = user.email;
+
+        const userName = document.getElementById('userName');
+        if (userName && user.user_metadata?.full_name) {
+            userName.value = user.user_metadata.full_name;
+        }
+    } catch (err) {
+        console.error('Error en checkUserSession:', err);
     }
-
-    const user = session.user;
-
-    // Actualizar DOM como antes
-    const userDisplay = document.getElementById('userDisplay');
-    if (userDisplay) userDisplay.textContent = `Bienvenido, ${user.email}`;
-
-    const userEmail = document.getElementById('userEmail');
-    if (userEmail) userEmail.value = user.email;
-
-    const userName = document.getElementById('userName');
-    if (userName && user.user_metadata?.full_name) {
-        userName.value = user.user_metadata.full_name;
-    }
-
-    return user;
 }
 
 export function listenAuthChanges() {
@@ -36,15 +35,13 @@ export function listenAuthChanges() {
 
 export async function logout() {
     try {
-        console.log('Logout iniciado');
         const { error } = await supabase.auth.signOut();
         if (error) {
-            alert('Error cerrando sesión: ' + error.message);
-            return;
+            console.error('Error cerrando sesión:', error.message);
+        } else {
+            window.location.href = 'index.html';
         }
-        window.location.href = 'index.html';
     } catch (err) {
-        alert('Error inesperado: ' + err.message);
+        console.error('Error inesperado en logout:', err);
     }
 }
-
