@@ -1,30 +1,24 @@
-/* script.js - Control de sesión, perfil y detección de fatiga */
+/* script.js - Manejo de sesión, perfil y control de detección */
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 import { startDetection, stopDetection } from './detection.js';
 
-// ----------------- Supabase -----------------
 const supabaseUrl = 'https://roogjmgxghbuiogpcswy.supabase.co';
 const supabaseKey = 'sb_publishable_RTN2PXvdWOQFfUySAaTa_g_LLe-T_NU';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// ----------------- Variables globales -----------------
-let sessionId = null; // id_sesion actual
-const videoElement = document.querySelector('.input_video');
-const canvasElement = document.querySelector('.output_canvas');
-const estado = document.getElementById('estado');
-
-// ----------------- Sesión y Auth -----------------
+// ---------------- Verificación de sesión ----------------
 async function checkUserSession() {
     const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) return console.error('Error obteniendo sesión:', error.message);
-    if (!session || !session.user) {
-        window.location.href = 'index.html';
-        return;
-    }
-    const userEmail = document.getElementById('userEmail');
-    if (userEmail) userEmail.value = session.user.email;
-}
+    if (error) { console.error('Error obteniendo la sesión:', error.message); return; }
+    if (!session || !session.user) { window.location.href = 'index.html'; return; }
 
+    const user = session.user;
+    const userEmail = document.getElementById('userEmail');
+    if (userEmail) userEmail.value = user.email;
+}
+checkUserSession();
+
+// ---------------- Obtener rol del usuario ----------------
 async function getUserRole() {
     try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -36,38 +30,37 @@ async function getUserRole() {
             .eq('id_usuario', user.id)
             .single();
 
-        if (error) {
-            console.error('Error fetch rol:', error);
-            return 'User';
-        }
-
+        if (error) { console.error('Error fetch rol:', error); return 'User'; }
         console.log('Rol real de la DB:', data.rol);
         return data.rol;
+
     } catch (err) {
         console.error('Error obteniendo rol:', err);
         return 'User';
     }
 }
 
-checkUserSession();
-
-// Escucha cambios de estado de auth
-supabase.auth.onAuthStateChange((event) => {
+// ---------------- Logout ----------------
+supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') window.location.href = 'index.html';
 });
 
-// Botón cerrar sesión
-document.getElementById('logoutBtn').addEventListener('click', async () => {
+document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error('Error cerrando sesión:', error.message);
     else window.location.href = 'index.html';
 });
 
-// ----------------- Registro de sesiones -----------------
+// ---------------- Sesión de conducción ----------------
+let sessionId = null;
+const videoElement = document.querySelector('.input_video');
+const canvasElement = document.querySelector('.output_canvas');
+const estado = document.getElementById('estado');
+
 async function startUserSession() {
     try {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) return alert('No se pudo obtener usuario. Inicia sesión de nuevo.');
+        if (userError || !user) { console.error('No se pudo obtener usuario:', userError); return; }
 
         const { data, error } = await supabase
             .from('sesiones_conduccion')
@@ -75,12 +68,11 @@ async function startUserSession() {
             .select()
             .single();
 
-        if (error) return console.error('Error insertando sesión:', error);
+        if (error) { console.error('Error insertando sesión:', error); return; }
         sessionId = data.id_sesion;
         console.log('Sesión iniciada:', sessionId);
-    } catch (error) {
-        console.error('Error en startUserSession:', error);
-    }
+
+    } catch (error) { console.error('Error en startUserSession:', error); }
 }
 
 async function endUserSession() {
@@ -90,56 +82,53 @@ async function endUserSession() {
             .from('sesiones_conduccion')
             .update({ fecha_fin: new Date().toISOString() })
             .eq('id_sesion', sessionId);
-
         if (error) console.error('Error al finalizar sesión:', error);
         else console.log('Sesión finalizada:', sessionId);
 
         sessionId = null;
-    } catch (error) {
-        console.error('Error en endUserSession:', error);
-    }
+    } catch (error) { console.error('Error en endUserSession:', error); }
 }
 
-// ----------------- Botones de detección -----------------
-document.getElementById('startDetection').addEventListener('click', async () => {
+// ---------------- Botones de detección ----------------
+document.getElementById('startDetection')?.addEventListener('click', async () => {
     const rol = await getUserRole();
     videoElement.style.display = 'block';
     canvasElement.style.display = rol === 'Dev' ? 'block' : 'none';
+
     await startUserSession();
     startDetection(rol, videoElement, canvasElement, estado);
 });
 
-document.getElementById('stopDetection').addEventListener('click', async () => {
+document.getElementById('stopDetection')?.addEventListener('click', async () => {
     stopDetection();
     videoElement.style.display = 'none';
     canvasElement.style.display = 'none';
     await endUserSession();
 });
 
-// ----------------- Edición de perfil -----------------
+// ---------------- Perfil de usuario ----------------
 async function loadUserProfile() {
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) return;
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return;
 
-    const userId = authData.user.id;
     const { data: userProfile, error } = await supabase
         .from('Usuarios')
         .select('nombre')
-        .eq('id_usuario', userId)
+        .eq('id_usuario', user.id)
         .single();
 
-    if (error) return console.error("Error cargando perfil:", error);
+    if (error) { console.error("Error cargando perfil:", error); return; }
+
     document.getElementById('userName').value = userProfile.nombre;
-    document.getElementById('userEmail').value = authData.user.email;
+    document.getElementById('userEmail').value = user.email;
 }
 
-// Abrir módulo de usuarios
-document.querySelector('.menu-btn[data-target="usuarios"]')
-    .addEventListener('click', loadUserProfile);
+document.querySelector('.menu-btn[data-target="usuarios"]')?.addEventListener('click', loadUserProfile);
 
 // Guardar cambios de perfil
-document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
+document.getElementById('editProfileForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const messageEl = document.getElementById('profileMessage');
     messageEl.textContent = '';
     messageEl.style.color = '#f87171';
@@ -160,8 +149,10 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
             email: user.email,
             password: currentPassword
         });
+
         if (authError) throw new Error('La contraseña actual es incorrecta');
 
+        // Verificar existencia en Usuarios
         const { data: existingUser, error: fetchError } = await supabase
             .from('Usuarios')
             .select('id_usuario')
@@ -172,10 +163,15 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
 
         // Insert o Update nombre
         if (!existingUser) {
-            const { error } = await supabase.from('Usuarios').insert([{ id_usuario: user.id, nombre: newName }]);
+            const { error } = await supabase
+                .from('Usuarios')
+                .insert([{ id_usuario: user.id, nombre: newName }]);
             if (error) throw error;
         } else {
-            const { error } = await supabase.from('Usuarios').update({ nombre: newName }).eq('id_usuario', user.id);
+            const { error } = await supabase
+                .from('Usuarios')
+                .update({ nombre: newName })
+                .eq('id_usuario', user.id);
             if (error) throw error;
         }
 
@@ -196,6 +192,7 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
 
         messageEl.style.color = '#10b981';
         messageEl.textContent = 'Perfil actualizado correctamente';
+
         document.getElementById('newPassword').value = '';
         document.getElementById('repeatPassword').value = '';
         document.getElementById('currentPassword').value = '';
