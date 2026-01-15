@@ -46,7 +46,7 @@ async function getUserRole() {
 
         const { data, error } = await supabase
             .from('Usuarios')          // Revisar mayúscula exacta
-            .select('rol')
+            .select('Rol')
             .eq('id_usuario', user.id) // Revisar el nombre exacto de la columna del ID
             .single();
 
