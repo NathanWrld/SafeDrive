@@ -220,6 +220,10 @@ canvas {
   border: 2px solid #38bdf8;
 }
 
+.output_canvas{
+  display: none;
+}
+
 #estado {
   margin-top: 20px;
   font-size: 18px;
