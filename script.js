@@ -40,10 +40,6 @@ async function checkUserSession() {
         userEmail.value = user.email;
     }
 
-    const userName = document.getElementById('userName');
-    if (userName && user.user_metadata?.full_name) {
-        userName.value = user.user_metadata.full_name;
-    }
 }
 
 
@@ -333,34 +329,53 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
     messageEl.textContent = '';
     messageEl.style.color = '#f87171';
 
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-    const userId = authData.user.id;
-    const newName = document.getElementById('userName').value;
-    const newEmail = document.getElementById('userEmail').value;
+    const newName = document.getElementById('userName').value.trim();
+    const newEmail = document.getElementById('userEmail').value.trim();
+    const newPassword = document.getElementById('newPassword').value;
+    const repeatPassword = document.getElementById('repeatPassword').value;
 
     try {
-        // Actualizar nombre en tabla Usuarios
-        const { error: updateError } = await supabase
+        // 1️⃣ Actualizar nombre
+        const { error: nameError } = await supabase
             .from('Usuarios')
             .update({ nombre: newName })
-            .eq('id_usuario', userId);
+            .eq('id_usuario', user.id);
 
-        if (updateError) throw updateError;
+        if (nameError) throw nameError;
 
-        // Actualizar email en Auth si cambió
-        if (newEmail !== authData.user.email) {
-            const { error: emailError } = await supabase.auth.updateUser({
-                email: newEmail
+        // 2️⃣ Actualizar email
+        if (newEmail && newEmail !== user.email) {
+            const { error } = await supabase.auth.updateUser({ email: newEmail });
+            if (error) throw error;
+        }
+
+        // 3️⃣ Validar y actualizar contraseña
+        if (newPassword || repeatPassword) {
+            if (newPassword.length < 6) {
+                throw new Error('La contraseña debe tener al menos 6 caracteres');
+            }
+            if (newPassword !== repeatPassword) {
+                throw new Error('Las contraseñas no coinciden');
+            }
+
+            const { error } = await supabase.auth.updateUser({
+                password: newPassword
             });
-            if (emailError) throw emailError;
+            if (error) throw error;
         }
 
         messageEl.style.color = '#10b981';
-        messageEl.textContent = "Perfil actualizado correctamente.";
+        messageEl.textContent = 'Perfil actualizado correctamente';
+
+        document.getElementById('newPassword').value = '';
+        document.getElementById('repeatPassword').value = '';
+
     } catch (err) {
         console.error(err);
-        messageEl.textContent = "Error al actualizar perfil.";
+        messageEl.textContent = err.message || 'Error al actualizar perfil';
     }
 });
+
