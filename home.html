@@ -62,8 +62,9 @@
         <section id="deteccion" class="card" style="display:none;">
             <h2>Detección en Tiempo Real</h2>
             <div class="cam-container" id="camFeed">
-                <video class="input_video" autoplay playsinline style="display:none;"></video>
-                <canvas class="output_canvas" style="display:none;"></canvas>
+                <video id="camaraNormal" class="input_video" autoplay playsinline style="display:none;"></video>
+
+                <canvas id="camaraAvanzada" class="output_canvas" style="display:none;"></canvas>
             </div>
             <div id="estado">
                 <p>Presiona "Iniciar Detección" para comenzar.</p>

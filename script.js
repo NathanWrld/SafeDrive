@@ -36,8 +36,23 @@ async function checkUserSession() {
 
 }
 
-
 checkUserSession();
+
+// Obtiene el rol del usuario logeado
+async function getUserRole() {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) return 'User';
+    
+    const { data, error } = await supabase
+        .from('usuarios')
+        .select('rol')
+        .eq('id', user.id)
+        .single();
+
+    if (error || !data) return 'User';
+    return data.rol;
+}
+
 
 supabase.auth.onAuthStateChange((event, session) => {
     if (event === 'SIGNED_OUT') {
@@ -116,16 +131,26 @@ async function endUserSession() {
 
 // ----------------- Botones -----------------
 document.getElementById('startDetection').addEventListener('click', async () => {
-    videoElement.style.display = 'block';
-    canvasElement.style.display = 'block';
+    const rol = await getUserRole();
+
+    if (rol === 'Dev') {
+        // Dev → mostrar cámara avanzada (canvas)
+        videoElement.style.display = 'block'; // el video sigue necesario para FaceMesh
+        canvasElement.style.display = 'block';
+    } else {
+        // Usuario normal → mostrar solo video
+        videoElement.style.display = 'block';
+        canvasElement.style.display = 'none';
+    }
 
     await startUserSession();
-    startDetection(); // tu función de FaceMesh / parpadeos
+    startDetection(rol); // Pasamos el rol a la función de detección
 
     estado.innerHTML = "<p>Analizando rostro...</p>";
     document.getElementById('startDetection').style.display = 'none';
     document.getElementById('stopDetection').style.display = 'inline-block';
 });
+
 
 document.getElementById('stopDetection').addEventListener('click', async () => {
     if (camera) {
@@ -146,8 +171,9 @@ document.getElementById('stopDetection').addEventListener('click', async () => {
 
 
 // ---------------- Lógica de detección ----------------
-function startDetection() {
+function startDetection(rol) {
     const canvasCtx = canvasElement.getContext('2d');
+    const isDev = rol === 'Dev'; // Solo Dev verá las líneas en el rostro
 
     // ---------------- Parámetros ----------------
     const SMOOTHING_WINDOW = 5;
@@ -189,20 +215,28 @@ function startDetection() {
     faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence:0.55, minTrackingConfidence:0.55 });
 
     faceMesh.onResults((results) => {
-        if (results.image) {
-            canvasElement.width = results.image.width || canvasElement.width;
-            canvasElement.height = results.image.height || canvasElement.height;
-        }
+        if (!results.image) return;
+
+        canvasElement.width = results.image.width || canvasElement.width;
+        canvasElement.height = results.image.height || canvasElement.height;
 
         canvasCtx.save();
         canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
-        canvasCtx.drawImage(results.image,0,0,canvasElement.width,canvasElement.height);
+
+        if (isDev) {
+            // Dev → dibuja el video en canvas
+            canvasCtx.drawImage(results.image,0,0,canvasElement.width,canvasElement.height);
+        }
 
         if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
             const lm = results.multiFaceLandmarks[0];
-            drawConnectors(canvasCtx, lm, FACEMESH_TESSELATION, { color: '#00C853', lineWidth: 0.5 });
-            drawConnectors(canvasCtx, lm, FACEMESH_RIGHT_EYE, { color:'#FF5722', lineWidth:1 });
-            drawConnectors(canvasCtx, lm, FACEMESH_LEFT_EYE, { color:'#FF5722', lineWidth:1 });
+
+            if (isDev) {
+                // Dev → dibuja conectores y ojos
+                drawConnectors(canvasCtx, lm, FACEMESH_TESSELATION, { color: '#00C853', lineWidth: 0.5 });
+                drawConnectors(canvasCtx, lm, FACEMESH_RIGHT_EYE, { color:'#FF5722', lineWidth:1 });
+                drawConnectors(canvasCtx, lm, FACEMESH_LEFT_EYE, { color:'#FF5722', lineWidth:1 });
+            }
 
             const rightEAR_px = calculateEAR_px(lm, RIGHT_EYE_IDX);
             const leftEAR_px  = calculateEAR_px(lm, LEFT_EYE_IDX);
@@ -212,6 +246,7 @@ function startDetection() {
             const faceWidthPx = Math.max(...xs) - Math.min(...xs);
             const ear_rel = faceWidthPx>0 ? ear_px/faceWidthPx : ear_px;
 
+            // -------- Calibración inicial --------
             if (!initialCalibrationDone) {
                 if (ear_rel>0) baselineSamples.push(ear_rel);
                 const remaining = Math.max(0, BASELINE_FRAMES_INIT - baselineSamples.length);
@@ -227,6 +262,7 @@ function startDetection() {
                 return;
             }
 
+            // -------- Suavizado y cálculo EAR --------
             earHistory.push(ear_rel);
             if (earHistory.length>SMOOTHING_WINDOW) earHistory.shift();
             const smoothedEAR = movingAverage(earHistory);
@@ -279,7 +315,7 @@ function startDetection() {
         canvasCtx.restore();
     });
 
-    // Inicializar cámara
+    // -------- Inicializar cámara --------
     camera = new Camera(videoElement, {
         onFrame: async () => { await faceMesh.send({image: videoElement}); },
         width: 480,
@@ -287,6 +323,7 @@ function startDetection() {
     });
     camera.start();
 }
+
 
 // ---------------- Edición de Perfil ----------------
 async function loadUserProfile() {
