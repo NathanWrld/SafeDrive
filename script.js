@@ -47,7 +47,7 @@ async function getUserRole() {
         // Tabla y columna con mayúsculas → comillas dobles
         const { data, error } = await supabase
             .from('"Usuarios"')       // tabla exacta
-            .select('"Rol"')          // columna exacta
+            .select('rol')          // columna exacta
             .eq('id_usuario', user.id)
             .single();
 
