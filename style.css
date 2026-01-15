@@ -342,6 +342,12 @@ canvas {
   outline: none;
 }
 
+.form-group #userEmail {
+  background: #334155;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* Mensaje de feedback */
 #profileMessage {
   font-size: 14px;
