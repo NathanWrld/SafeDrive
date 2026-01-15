@@ -46,15 +46,15 @@ async function getUserRole() {
     const { data, error } = await supabase
         .from('usuarios')
         .select('rol')
-        .eq('id', user.id)
+        .eq('id_usuario', user.id) // asegúrate que sea 'id_usuario', no 'id'
         .single();
 
     if (error || !data || !data.rol) return 'User';
 
     const rolString = String(data.rol).trim().toLowerCase();
-    if (rolString === 'dev') return 'Dev';
-    return 'User';
+    return rolString === 'dev' ? 'Dev' : 'User';
 }
+
 
 
 supabase.auth.onAuthStateChange((event, session) => {
@@ -135,24 +135,25 @@ async function endUserSession() {
 // ----------------- Botones -----------------
 document.getElementById('startDetection').addEventListener('click', async () => {
     const rol = await getUserRole();
-    console.log('Rol detectado:', rol); 
+    console.log('Rol detectado:', rol);
 
-    // Siempre mostrar el video
     videoElement.style.display = 'block';
     
+    // Para Dev, mostramos el canvas antes de iniciar la cámara
     if (rol === 'Dev') {
-        canvasElement.style.display = 'block'; // Mostrar canvas antes de iniciar la cámara
+        canvasElement.style.display = 'block';
     } else {
         canvasElement.style.display = 'none';
     }
 
     await startUserSession();
-    startDetection(rol);
+    startDetection(rol); // inicia FaceMesh
 
     estado.innerHTML = "<p>Analizando rostro...</p>";
     document.getElementById('startDetection').style.display = 'none';
     document.getElementById('stopDetection').style.display = 'inline-block';
 });
+
 
 
 document.getElementById('stopDetection').addEventListener('click', async () => {
@@ -177,6 +178,9 @@ document.getElementById('stopDetection').addEventListener('click', async () => {
 function startDetection(rol) {
     const canvasCtx = canvasElement.getContext('2d');
     const isDev = rol === 'Dev'; // Solo Dev verá las líneas en el rostro
+
+    // Mostrar el canvas antes de iniciar la cámara si es Dev
+    if (isDev) canvasElement.style.display = 'block';
 
     const SMOOTHING_WINDOW = 5;
     const BASELINE_FRAMES_INIT = 60;
@@ -312,6 +316,7 @@ function startDetection(rol) {
         if (isDev) canvasCtx.restore();
     });
 
+    // Inicializar cámara siempre después de mostrar canvas
     camera = new Camera(videoElement, {
         onFrame: async () => { await faceMesh.send({image: videoElement}); },
         width: 480,
@@ -319,6 +324,7 @@ function startDetection(rol) {
     });
     camera.start();
 }
+
 
 
 
