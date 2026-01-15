@@ -135,24 +135,29 @@ async function endUserSession() {
 // ----------------- Botones -----------------
 document.getElementById('startDetection').addEventListener('click', async () => {
     const rol = await getUserRole();
-    console.log('Rol detectado:', rol);
+    console.log('Rol detectado:', rol); // Para depuración
 
-    videoElement.style.display = 'block';
-    
-    // Para Dev, mostramos el canvas antes de iniciar la cámara
+    // Solo mostrar canvas si es Dev
     if (rol === 'Dev') {
         canvasElement.style.display = 'block';
     } else {
         canvasElement.style.display = 'none';
     }
 
+    // Siempre mostrar video
+    videoElement.style.display = 'block';
+
+    // Iniciar sesión de usuario
     await startUserSession();
-    startDetection(rol); // inicia FaceMesh
+
+    // Iniciar detección
+    startDetection(rol);
 
     estado.innerHTML = "<p>Analizando rostro...</p>";
     document.getElementById('startDetection').style.display = 'none';
     document.getElementById('stopDetection').style.display = 'inline-block';
 });
+
 
 
 
