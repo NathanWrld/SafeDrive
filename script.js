@@ -40,20 +40,26 @@ checkUserSession();
 
 // Obtiene el rol del usuario logeado
 async function getUserRole() {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) return 'User';
+    try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) return 'User';
 
-    const { data, error } = await supabase
-        .from('usuarios')
-        .select('rol')
-        .eq('id_usuario', user.id) // asegúrate que sea 'id_usuario', no 'id'
-        .single();
+        const { data, error } = await supabase
+            .from('Usuarios')          // Revisar mayúscula exacta
+            .select('rol')
+            .eq('id_usuario', user.id) // Revisar el nombre exacto de la columna del ID
+            .single();
 
-    if (error || !data || !data.rol) return 'User';
+        if (error || !data || !data.rol) return 'User';
 
-    const rolString = String(data.rol).trim().toLowerCase();
-    return rolString === 'dev' ? 'Dev' : 'User';
+        console.log('Rol real de la DB:', data.rol); // Para depuración
+        return data.rol; // Devuelve exactamente lo que está en la base de datos
+    } catch (err) {
+        console.error('Error obteniendo rol:', err);
+        return 'User';
+    }
 }
+
 
 
 
