@@ -338,21 +338,45 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
     const repeatPassword = document.getElementById('repeatPassword').value;
 
     try {
-        // 1️⃣ Actualizar nombre
-        const { error: nameError } = await supabase
+        // 1️⃣ Verificar si el usuario existe en la tabla Usuarios
+        const { data: existingUser, error: fetchError } = await supabase
             .from('Usuarios')
-            .update({ nombre: newName })
-            .eq('id_usuario', user.id);
+            .select('id_usuario')
+            .eq('id_usuario', user.id)
+            .single();
 
-        if (nameError) throw nameError;
+        if (fetchError && fetchError.code !== 'PGRST116') {
+            throw fetchError;
+        }
 
-        // 2️⃣ Actualizar email
+        // 2️⃣ Si NO existe → INSERT
+        if (!existingUser) {
+            const { error: insertError } = await supabase
+                .from('Usuarios')
+                .insert([{
+                    id_usuario: user.id,
+                    nombre: newName
+                }]);
+
+            if (insertError) throw insertError;
+        }
+        // 3️⃣ Si existe → UPDATE
+        else {
+            const { error: updateError } = await supabase
+                .from('Usuarios')
+                .update({ nombre: newName })
+                .eq('id_usuario', user.id);
+
+            if (updateError) throw updateError;
+        }
+
+        // 4️⃣ Actualizar email en Auth
         if (newEmail && newEmail !== user.email) {
             const { error } = await supabase.auth.updateUser({ email: newEmail });
             if (error) throw error;
         }
 
-        // 3️⃣ Validar y actualizar contraseña
+        // 5️⃣ Validar y actualizar contraseña
         if (newPassword || repeatPassword) {
             if (newPassword.length < 6) {
                 throw new Error('La contraseña debe tener al menos 6 caracteres');
@@ -378,4 +402,5 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
         messageEl.textContent = err.message || 'Error al actualizar perfil';
     }
 });
+
 
