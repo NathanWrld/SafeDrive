@@ -51,12 +51,10 @@ async function getUserRole() {
 
     if (error || !data || !data.rol) return 'User';
 
-    // Normalizar: quitar espacios y convertir a mayúsculas la primera letra
-    const rol = String(data.rol).trim();
-    if (rol === 'Dev') return 'Dev';
+    const rolString = String(data.rol).trim().toLowerCase();
+    if (rolString === 'dev') return 'Dev';
     return 'User';
 }
-
 
 
 supabase.auth.onAuthStateChange((event, session) => {
@@ -137,13 +135,14 @@ async function endUserSession() {
 // ----------------- Botones -----------------
 document.getElementById('startDetection').addEventListener('click', async () => {
     const rol = await getUserRole();
-    console.log('Rol detectado:', rol); // Para depuración
+    console.log('Rol detectado:', rol); 
 
+    // Siempre mostrar el video
+    videoElement.style.display = 'block';
+    
     if (rol === 'Dev') {
-        videoElement.style.display = 'block';
-        canvasElement.style.display = 'block';
+        canvasElement.style.display = 'block'; // Mostrar canvas antes de iniciar la cámara
     } else {
-        videoElement.style.display = 'block';
         canvasElement.style.display = 'none';
     }
 
@@ -154,7 +153,6 @@ document.getElementById('startDetection').addEventListener('click', async () => 
     document.getElementById('startDetection').style.display = 'none';
     document.getElementById('stopDetection').style.display = 'inline-block';
 });
-
 
 
 document.getElementById('stopDetection').addEventListener('click', async () => {
