@@ -47,7 +47,7 @@ async function getUserRole() {
         // Usar minúscula exacta para tabla y columna
         const { data, error } = await supabase
             .from('usuarios')          // tabla en minúscula
-            .select('Rol')
+            .select('rol')
             .eq('id_usuario', user.id) // columna exacta en minúscula
             .single();
 
