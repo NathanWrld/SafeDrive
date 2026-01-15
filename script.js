@@ -180,7 +180,6 @@ function startDetection(rol) {
     const canvasCtx = canvasElement.getContext('2d');
     const isDev = rol === 'Dev'; // Solo Dev verá las líneas en el rostro
 
-    // ---------------- Parámetros ----------------
     const SMOOTHING_WINDOW = 5;
     const BASELINE_FRAMES_INIT = 60;
     const EMA_ALPHA = 0.03;
@@ -222,22 +221,20 @@ function startDetection(rol) {
     faceMesh.onResults((results) => {
         if (!results.image) return;
 
-        canvasElement.width = results.image.width || canvasElement.width;
-        canvasElement.height = results.image.height || canvasElement.height;
-
-        canvasCtx.save();
-        canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
-
         if (isDev) {
-            // Dev → dibuja el video en canvas
-            canvasCtx.drawImage(results.image,0,0,canvasElement.width,canvasElement.height);
+            canvasElement.width = results.image.width || canvasElement.width;
+            canvasElement.height = results.image.height || canvasElement.height;
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
+            // Dibujar video y conectores solo para Dev
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
         }
 
         if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
             const lm = results.multiFaceLandmarks[0];
 
             if (isDev) {
-                // Dev → dibuja conectores y ojos
                 drawConnectors(canvasCtx, lm, FACEMESH_TESSELATION, { color: '#00C853', lineWidth: 0.5 });
                 drawConnectors(canvasCtx, lm, FACEMESH_RIGHT_EYE, { color:'#FF5722', lineWidth:1 });
                 drawConnectors(canvasCtx, lm, FACEMESH_LEFT_EYE, { color:'#FF5722', lineWidth:1 });
@@ -251,23 +248,20 @@ function startDetection(rol) {
             const faceWidthPx = Math.max(...xs) - Math.min(...xs);
             const ear_rel = faceWidthPx>0 ? ear_px/faceWidthPx : ear_px;
 
-            // -------- Calibración inicial --------
             if (!initialCalibrationDone) {
                 if (ear_rel>0) baselineSamples.push(ear_rel);
                 const remaining = Math.max(0, BASELINE_FRAMES_INIT - baselineSamples.length);
                 estado.innerHTML = `<p>✅ Rostro detectado — calibrando... (${remaining} frames)</p>
                                     <p>Parpadeos: ${blinkCount}</p>`;
-                canvasCtx.restore();
                 if (baselineSamples.length >= BASELINE_FRAMES_INIT) {
                     baselineEMA = median(baselineSamples);
                     if (baselineEMA<=0) baselineEMA=0.01;
                     initialCalibrationDone = true;
-                    console.log('Baseline inicial:', baselineEMA);
                 }
+                if (isDev) canvasCtx.restore();
                 return;
             }
 
-            // -------- Suavizado y cálculo EAR --------
             earHistory.push(ear_rel);
             if (earHistory.length>SMOOTHING_WINDOW) earHistory.shift();
             const smoothedEAR = movingAverage(earHistory);
@@ -317,10 +311,9 @@ function startDetection(rol) {
             estado.innerHTML = `<p>❌ No se detecta rostro</p>`;
         }
 
-        canvasCtx.restore();
+        if (isDev) canvasCtx.restore();
     });
 
-    // -------- Inicializar cámara --------
     camera = new Camera(videoElement, {
         onFrame: async () => { await faceMesh.send({image: videoElement}); },
         width: 480,
@@ -328,6 +321,7 @@ function startDetection(rol) {
     });
     camera.start();
 }
+
 
 
 // ---------------- Edición de Perfil ----------------
