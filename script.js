@@ -336,9 +336,24 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
     const newEmail = document.getElementById('userEmail').value.trim();
     const newPassword = document.getElementById('newPassword').value;
     const repeatPassword = document.getElementById('repeatPassword').value;
+    const currentPassword = document.getElementById('currentPassword').value;
 
     try {
-        // 1️⃣ Verificar si el usuario existe en la tabla Usuarios
+        // 🔐 Verificar contraseña actual
+        if (!currentPassword) {
+            throw new Error('Debes ingresar tu contraseña actual');
+        }
+
+        const { error: authError } = await supabase.auth.signInWithPassword({
+            email: user.email,
+            password: currentPassword
+        });
+
+        if (authError) {
+            throw new Error('La contraseña actual es incorrecta');
+        }
+
+        // 1️⃣ Verificar si existe en Usuarios
         const { data: existingUser, error: fetchError } = await supabase
             .from('Usuarios')
             .select('id_usuario')
@@ -349,34 +364,27 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
             throw fetchError;
         }
 
-        // 2️⃣ Si NO existe → INSERT
+        // 2️⃣ Insert o Update nombre
         if (!existingUser) {
-            const { error: insertError } = await supabase
+            const { error } = await supabase
                 .from('Usuarios')
-                .insert([{
-                    id_usuario: user.id,
-                    nombre: newName
-                }]);
-
-            if (insertError) throw insertError;
-        }
-        // 3️⃣ Si existe → UPDATE
-        else {
-            const { error: updateError } = await supabase
+                .insert([{ id_usuario: user.id, nombre: newName }]);
+            if (error) throw error;
+        } else {
+            const { error } = await supabase
                 .from('Usuarios')
                 .update({ nombre: newName })
                 .eq('id_usuario', user.id);
-
-            if (updateError) throw updateError;
+            if (error) throw error;
         }
 
-        // 4️⃣ Actualizar email en Auth
+        // 3️⃣ Actualizar email
         if (newEmail && newEmail !== user.email) {
             const { error } = await supabase.auth.updateUser({ email: newEmail });
             if (error) throw error;
         }
 
-        // 5️⃣ Validar y actualizar contraseña
+        // 4️⃣ Actualizar contraseña
         if (newPassword || repeatPassword) {
             if (newPassword.length < 6) {
                 throw new Error('La contraseña debe tener al menos 6 caracteres');
@@ -396,6 +404,7 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
 
         document.getElementById('newPassword').value = '';
         document.getElementById('repeatPassword').value = '';
+        document.getElementById('currentPassword').value = '';
 
     } catch (err) {
         console.error(err);
