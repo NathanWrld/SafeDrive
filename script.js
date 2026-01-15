@@ -307,119 +307,54 @@ async function loadUserProfile() {
 
     const { data: userProfile, error } = await supabase
         .from('Usuarios')
-        .select('*')
+        .select('nombre')
         .eq('id_usuario', userId)
         .single();
 
-    if (error) console.error("Error cargando perfil:", error);
-    else {
-        document.getElementById('userName').value = userProfile.nombre;
-        document.getElementById('userEmail').value = authData.user.email;
-
-        const userPhoto = document.getElementById('userPhoto');
-        if (userPhoto) userPhoto.src = userProfile.foto || 'default-avatar.png';
+    if (error) {
+        console.error("Error cargando perfil:", error);
+        return;
     }
+
+    document.getElementById('userName').value = userProfile.nombre;
+    document.getElementById('userEmail').value = authData.user.email;
 }
 
 // Ejecutar cuando se abre el módulo "usuarios"
-document.querySelector('.menu-btn[data-target="usuarios"]').addEventListener('click', loadUserProfile);
+document
+    .querySelector('.menu-btn[data-target="usuarios"]')
+    .addEventListener('click', loadUserProfile);
 
+// Guardar cambios del perfil
 document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const messageEl = document.getElementById('profileMessage');
     messageEl.textContent = '';
     messageEl.style.color = '#f87171';
 
     const { data: authData } = await supabase.auth.getUser();
     if (!authData.user) return;
-    const userId = authData.user.id;
 
+    const userId = authData.user.id;
     const newName = document.getElementById('userName').value;
     const newEmail = document.getElementById('userEmail').value;
-    const photoFile = document.getElementById('userPhotoInput').files[0];
-
-    try {
-        // Actualizar tabla Usuarios
-        await supabase.from('Usuarios')
-            .update({ nombre: newName })
-            .eq('id_usuario', userId);
-
-        // Actualizar email en Auth si cambió
-        if (newEmail !== authData.user.email) {
-            const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
-            if (emailError) throw emailError;
-        }
-
-        // Subir foto si seleccionó una
-        if (photoFile) {
-            const photoUrl = await uploadUserPhoto(photoFile, userId);
-            document.getElementById('userPhoto').src = photoUrl;
-        }
-
-        messageEl.style.color = '#10b981';
-        messageEl.textContent = "Perfil actualizado correctamente.";
-    } catch (err) {
-        console.error(err);
-        messageEl.textContent = "Error al actualizar perfil.";
-    }
-});
-
-async function uploadUserPhoto(file, userId) {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${userId}.${fileExt}`;
-    const filePath = `perfil/${fileName}`;
-
-    const { data, error } = await supabase.storage
-        .from('avatars')   // Debes crear bucket 'avatars'
-        .upload(filePath, file, { upsert: true });
-
-    if (error) throw error;
-
-    const { publicUrl, error: urlError } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-
-    if (urlError) throw urlError;
-
-    // Actualizar tabla Usuarios con URL de la foto
-    await supabase.from('Usuarios')
-        .update({ foto: publicUrl })
-        .eq('id_usuario', userId);
-
-    return publicUrl;
-}
-
-
-document.getElementById('editProfileForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const messageEl = document.getElementById('profileMessage');
-    messageEl.textContent = '';
-    messageEl.style.color = '#f87171';
-
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user) return;
-    const userId = authData.user.id;
-
-    const newName = document.getElementById('userName').value;
-    const newEmail = document.getElementById('userEmail').value;
-    const photoFile = document.getElementById('userPhotoInput').files[0];
 
     try {
         // Actualizar nombre en tabla Usuarios
-        await supabase.from('Usuarios')
+        const { error: updateError } = await supabase
+            .from('Usuarios')
             .update({ nombre: newName })
             .eq('id_usuario', userId);
 
+        if (updateError) throw updateError;
+
         // Actualizar email en Auth si cambió
         if (newEmail !== authData.user.email) {
-            const { error: emailError } = await supabase.auth.updateUser({ email: newEmail });
+            const { error: emailError } = await supabase.auth.updateUser({
+                email: newEmail
+            });
             if (emailError) throw emailError;
-        }
-
-        // Subir foto si seleccionó una
-        if (photoFile) {
-            const photoUrl = await uploadUserPhoto(photoFile, userId);
-            document.getElementById('userPhoto').src = photoUrl;
         }
 
         messageEl.style.color = '#10b981';
@@ -429,7 +364,3 @@ document.getElementById('editProfileForm').addEventListener('submit', async (e) 
         messageEl.textContent = "Error al actualizar perfil.";
     }
 });
-
-
-
-
