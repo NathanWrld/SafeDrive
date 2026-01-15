@@ -44,10 +44,10 @@ async function getUserRole() {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) return 'User';
 
-        // Tabla y columna con mayúsculas → comillas dobles
+        // No usar comillas dobles
         const { data, error } = await supabase
-            .from('"Usuarios"')       // tabla exacta
-            .select('rol')          // columna exacta
+            .from('Usuarios')       // sin comillas
+            .select('rol')          // columna minúscula
             .eq('id_usuario', user.id)
             .single();
 
@@ -56,13 +56,14 @@ async function getUserRole() {
             return 'User';
         }
 
-        console.log('Rol real de la DB:', data.Rol);
-        return data.Rol; // devolverá "Dev" o "User"
+        console.log('Rol real de la DB:', data.rol);
+        return data.rol; // devolverá "Dev" o "User"
     } catch (err) {
         console.error('Error obteniendo rol:', err);
         return 'User';
     }
 }
+
 
 
 supabase.auth.onAuthStateChange((event, session) => {
