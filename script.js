@@ -28,12 +28,6 @@ async function checkUserSession() {
     // ✅ Hay usuario
     const user = session.user;
 
-    // Header o saludo
-    const userDisplay = document.getElementById('userDisplay');
-    if (userDisplay) {
-        userDisplay.textContent = `Bienvenido, ${user.email}`;
-    }
-
     // Perfil
     const userEmail = document.getElementById('userEmail');
     if (userEmail) {
