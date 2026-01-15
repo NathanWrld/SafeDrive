@@ -44,22 +44,25 @@ async function getUserRole() {
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError || !user) return 'User';
 
+        // Usar minúscula exacta para tabla y columna
         const { data, error } = await supabase
-            .from('Usuarios')          // Revisar mayúscula exacta
+            .from('usuarios')          // tabla en minúscula
             .select('Rol')
-            .eq('id_usuario', user.id) // Revisar el nombre exacto de la columna del ID
+            .eq('id_usuario', user.id) // columna exacta en minúscula
             .single();
 
-        if (error || !data || !data.rol) return 'User';
+        if (error) {
+            console.error('Error fetch rol:', error);
+            return 'User';
+        }
 
-        console.log('Rol real de la DB:', data.rol); // Para depuración
-        return data.rol; // Devuelve exactamente lo que está en la base de datos
+        console.log('Rol real de la DB:', data.rol);
+        return data.rol;
     } catch (err) {
         console.error('Error obteniendo rol:', err);
         return 'User';
     }
 }
-
 
 
 
